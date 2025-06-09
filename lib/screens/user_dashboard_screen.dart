@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:image_picker/image_picker.dart';
 import 'login_screen.dart';
+import 'id_card_screen.dart';
 
 class UserDashboardScreen extends StatefulWidget {
   const UserDashboardScreen({super.key});
@@ -12,8 +13,11 @@ class UserDashboardScreen extends StatefulWidget {
   State<UserDashboardScreen> createState() => _UserDashboardScreenState();
 }
 
-class _UserDashboardScreenState extends State<UserDashboardScreen> {
+class _UserDashboardScreenState extends State<UserDashboardScreen>
+    with SingleTickerProviderStateMixin {
   int _selectedIndex = 0;
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
 
   static final List<Widget> _pages = <Widget>[
     _HomePage(),
@@ -22,28 +26,94 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
     _ProfilePage(),
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeInOut,
+    );
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
+      _controller.reset();
+      _controller.forward();
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Driver Dashboard')),
-      body: _pages[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.badge), label: 'My ID'),
-          BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: Colors.blueAccent,
-        onTap: _onItemTapped,
-        type: BottomNavigationBarType.fixed,
+      extendBody: true,
+      appBar: AppBar(
+        title: const Text('Driver Dashboard'),
+        backgroundColor: Colors.blueAccent.shade700,
+        elevation: 6,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF1976D2), Color(0xFF64B5F6)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+      ),
+      body: AnimatedBuilder(
+        animation: _fadeAnimation,
+        builder:
+            (context, child) => Opacity(
+              opacity: _fadeAnimation.value,
+              child: _pages[_selectedIndex],
+            ),
+      ),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF1976D2), Color(0xFF64B5F6)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 8,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: BottomNavigationBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          items: const <BottomNavigationBarItem>[
+            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+            BottomNavigationBarItem(icon: Icon(Icons.badge), label: 'My ID'),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.history),
+              label: 'History',
+            ),
+            BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+          ],
+          currentIndex: _selectedIndex,
+          selectedItemColor: Colors.white,
+          unselectedItemColor: Colors.white70,
+          onTap: _onItemTapped,
+          type: BottomNavigationBarType.fixed,
+          showUnselectedLabels: true,
+        ),
       ),
     );
   }
@@ -726,6 +796,48 @@ class _MyIDPageState extends State<_MyIDPage> {
                                 endorsements ?? '',
                               ),
                             const SizedBox(height: 20),
+                            ElevatedButton.icon(
+                              icon: const Icon(Icons.credit_card),
+                              label: const Text('View Official Card'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blueAccent,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                  horizontal: 24,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              onPressed: () {
+                                if (name != null &&
+                                    dob != null &&
+                                    address != null &&
+                                    nationalId != null &&
+                                    licenseClass != null &&
+                                    licenseIssueDate != null &&
+                                    licenseExpiryDate != null &&
+                                    image != null) {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder:
+                                          (context) => IDCardScreen(
+                                            name: name!,
+                                            dob: dob!,
+                                            address: address!,
+                                            image: image!,
+                                            nationalId: nationalId!,
+                                            licenseClass: licenseClass!,
+                                            licenseIssueDate: licenseIssueDate!,
+                                            licenseExpiryDate:
+                                                licenseExpiryDate!,
+                                            endorsements: endorsements ?? '',
+                                          ),
+                                    ),
+                                  );
+                                }
+                              },
+                            ),
                           ],
                         ),
                       ),
